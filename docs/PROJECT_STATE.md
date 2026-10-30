@@ -9,6 +9,9 @@ release requirements.
 ## Resume here
 
 - The Linux `1.0.25` DEB, RPM, AppImage, and Pacman artifacts are live.
+- The XPR 6550 MotoTRBO `.ctb` codeplug file decode is implemented,
+  offline-tested, and read-only (see `docs/SESSION_HANDOFF_XPR6550.md`).
+  DMR channel mapping and the radio-level clone protocol remain open.
 - The live downloads page shows separate Linux rows for DEB, RPM, AppImage,
   and Pacman. Keep Pacman labeled for Arch/Omarchy/Manjaro and keep the
   copyable `sudo pacman -U ~/Downloads/NewChirp-linux-x64-<version>.pkg.tar.zst`

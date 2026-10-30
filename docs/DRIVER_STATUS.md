@@ -4,7 +4,7 @@ This is the authoritative local ledger for radios whose support is maintained
 by NewChirp rather than upstream CHIRP. Update it whenever a driver is added,
 changes transport, gains or loses write support, or completes hardware testing.
 
-Last updated: 2026-10-29
+Last updated: 2026-10-30
 
 ## Status definitions
 
@@ -22,6 +22,7 @@ Last updated: 2026-10-29
 | Yaesu FTM-150R/E/ASP | `drivers/newchirp_ftm150.py` | CHIRP clone serial, 38400 8N1 | Yes | Yes | Hidden | Experimental |
 | Yaesu FT-1D/2D/3D/5D clone family | `drivers/newchirp_yaesu_clone.py` | CHIRP Yaesu clone serial, 38400 8N1 | Completion-safe timeout | Stock CHIRP driver | Stock CHIRP driver | Experimental |
 | Radtel RT-950 | `drivers/newchirp_rt950.py` | CHIRP-compatible serial, 115200 8N1 + RTS/XON | Yes, designed | Disabled | Hidden | Experimental |
+| Anytone AT-D578UV | `drivers/newchirp_d578uv.py` | Anytone D868-generation serial, 115200 8N1 | Yes, designed | Disabled | Hidden | Experimental |
 | Retevis RT97L | `drivers/newchirp_rt97l.py` | Stock USB serial, 9600 8N1 + DTR/RTS | Yes, hardware pending | Disabled | Hidden | Experimental |
 | Kenwood TS-2000 | `drivers/newchirp_ts2000.py` | Kenwood live CAT serial, 9600 8N1 + RTS | Yes | Yes, longer write timeout | Standard | Hardware read verified; write retest pending |
 | Connect Systems CS750 | `drivers/newchirp_cs750.py` | NewChirp raw SCSI/RAP; CPS `.rdb` import | Yes, untested hardware | Disabled | Hidden | Experimental |
@@ -31,6 +32,7 @@ Last updated: 2026-10-29
 | Midland MXT295 | `drivers/newchirp_mxt295.py` | CHIRP clone serial, 115200 8N1 | Yes, designed | Yes, hardware-tested | Radio & Modes | Hardware-tested |
 | Icom IC-9700 | `drivers/newchirp_icom9700.py` | Icom CI-V serial, auto-baud from 4800 to 115200 | Stock CHIRP driver | Stock CHIRP driver | Stock CHIRP driver | Experimental |
 | Motorola MOTOTRBO R7 | `lib/services/mototrbo_cps2_xml.dart` | CPS 2.0 Zone XML import | Conventional channels | Disabled | Import-only extras | Experimental |
+| Motorola XPR 6550 | `drivers/newchirp_xpr6550.py` | Classic CPS `.ctb` (MATRIX) file import | Yes, file-only | Disabled | Hidden | Experimental |
 
 ## Radio details
 
@@ -84,6 +86,33 @@ Last updated: 2026-10-29
   RT-950 handshake, so no physical read has completed
 - Next milestone: confirm the RT-950 is powered and in programming mode, then
   capture a complete successful read and export a test image
+
+### Anytone AT-D578UV
+
+- Maintained driver: `drivers/newchirp_d578uv.py`
+- Protocol notes: `docs/D578UV_PROTOCOL.md`
+- Evidence: qdmr GPL D578UV implementation (memory map, transport, tone
+  tables), corroborated by dmrconfig and reald/anytone-flash-tools RE
+  notes; owner-supplied CPS v1.21 artifacts for decode validation
+- CPS installer SHA-256:
+  `7602fe26c4733e86f4b12d1e34ab55f32dbbd58fd3b381b55ae1f5a38a82949e`
+- Codeplug export SHA-256 (`d578-20260528.rdt`, ident `D578UV`/`V111`):
+  `749e4a2898564d208b06da07692d6522b68e75b77fe7d6e4c0d61e9f8a565df0`
+- Transport: plain 115200 8N1; `PROGRAM`/`QX\x06` handshake, `0x02` ident,
+  sparse 16-byte-chunk reads with additive checksum and `0x06` terminator,
+  `END` to close
+- Implemented: 4000 channels from the sparse radio layout packed into a
+  0xD0-byte-per-channel image; frequencies (10 Hz BCD), offset/duplex,
+  analog/digital mode, 4 power levels, bandwidth, CTCSS/DCS including the
+  custom CTCSS slot, rx-only, talkaround, DMR color code/time slot/
+  contact/radio-ID/admission extras; validity-bitmap-driven reads
+- Read/write state: read implemented and offline-tested; every write entry
+  point is disabled
+- Hardware validation: none yet; the owner has a D578UV III PLUS and USB
+  programming cable available. The ident does not distinguish PRO/III/
+  III PLUS hardware, so unknown firmware revisions log a warning
+- Next milestone: perform a full physical read, then compare the decoded
+  channels against the owner's CPS v1.21 codeplug before any write design
 
 ### Connect Systems CS750
 
@@ -317,6 +346,48 @@ Last updated: 2026-10-29
 - Next milestone: import a redacted R7 CPS 2.0 Zone XML sample, compare every
   field with CPS2, then research direct programming only if a physical R7,
   entitled CPS installation, and compatible cable are available
+
+### Motorola XPR 6550
+
+- Maintained driver: `drivers/newchirp_xpr6550.py`
+- Format notes: `docs/XPR6550_CODEPLUG_FORMAT.md`
+- Transport: offline file import of classic CPS `.ctb` MATRIX archives.
+  No serial or network communication is implemented; the Gen-1 TRBO clone
+  protocol (XNL/XCMP over the USB network adapter, TCP 8002) is a separate
+  future milestone.
+- Evidence (user-supplied CPS install, not committed):
+  - `2024-October.ctb` SHA-256
+    `1bb18161de026cbf43ef6d6f9c35edcbf5d3027b7509b4e4aa75e42440fe1c90`
+    (88,127 bytes, 2024-10-04)
+  - `cpservices.dll` SHA-256
+    `a2554dcdc5eca4fc0b3ec73135d7a49e9c0d6924f9d70fccf0192aac6d4cd09d`
+    (3,112,960 bytes, 2018-11-21, CPS R14/R16 era)
+  - `resources/mototrbocps` PKCS#12 bundle SHA-256
+    `10f3dc373c193ba4a8ba5898ea4376f9c231dddc4f2af3316250c8e79b2ba43d`
+- Implemented: AES-256-CBC + gzip payload decode (key/IV are CPS product
+  constants from `cpservices.dll`; provenance in the format notes),
+  conventional channel decode (name, RX/TX frequency, receive-only, duplex,
+  CTCSS/DPL with inversion polarity, 12.5/25 kHz bandwidth, power level,
+  TOT, talkaround), and zone exposure as CHIRP subdevices.
+- Read/write policy: read-only. `set_memory`/`erase_memory` raise RadioError
+  and `save_mmap` rewrites the untouched original bytes so signatures and
+  opaque entities survive round-trips.
+- Offline validation: `test/xpr6550_driver_test.py` (11 tests) covers an
+  AES-256 FIPS-197 known-answer vector, the MATRIX envelope round-trip, a
+  synthetic codeplug with TSQL/receive-only/DPL/cross channels, zone
+  subdevices, byte-identical save, and refused writes. The real evidence
+  codeplug decodes through `chirp_bridge.py read-image` to 53 channels in
+  7 named zones with tones, powers, and receive-only state matching the
+  CPS export semantics.
+- Not validated: DMR personality values (the evidence codeplug holds only
+  analog conventional records; the DMR mapping is provisional), power
+  ratings beyond Low 1 W / High 4 W, and any radio-level behavior.
+- Radio model in evidence: `H55JDH9LA1AN`, serial `037TKY6102`, DMR
+  subscriber ID 1.
+- Next milestone: obtain a codeplug containing DMR conventional
+  personalities (or a physical-radio read) to validate the DMR channel
+  mapping; then research the XNL/XCMP clone protocol with a Wireshark
+  capture of a real CPS read session.
 
 ## Reusable NewChirp transport work
 

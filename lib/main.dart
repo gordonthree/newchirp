@@ -1036,7 +1036,7 @@ class _NewChirpHomeState extends State<NewChirpHome> {
   Future<void> _openLibraryFile() async {
     const type = XTypeGroup(
       label: 'CHIRP and MOTOTRBO files',
-      extensions: ['csv', 'img', 'icf', 'itm', 'd72', 'xml'],
+      extensions: ['csv', 'img', 'icf', 'itm', 'd72', 'xml', 'ctb'],
     );
     final file = await openFile(acceptedTypeGroups: const [type]);
     if (file == null) return;
