@@ -1,3 +1,19 @@
+# ATTENTION
+
+This is a fork of the NewChirp project. This repo is supporting AI driven code development 
+using (Hermes Agent / Claude) to add support for specific DMR radios. 
+
+Presently I am working on:
+- Anytone AT-D578UV III Plus
+- Motorola MotoTRBO XPR 6550
+
+Driver status:
+- Anytone driver: Read only passes code tests, untested against hardware
+- MotoTRBO driver: Read only passes code tests, untested against hardward
+
+
+
+
 # NewChirp
 
 NewChirp is a Flutter desktop channel editor for amateur and GMRS radios. It
