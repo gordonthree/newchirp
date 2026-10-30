@@ -12,6 +12,15 @@ release requirements.
 - The XPR 6550 MotoTRBO `.ctb` codeplug file decode is implemented,
   offline-tested, and read-only (see `docs/SESSION_HANDOFF_XPR6550.md`).
   DMR channel mapping and the radio-level clone protocol remain open.
+- Both experimental drivers (XPR 6550 `.ctb` decode, D578UV serial) are
+  read-only and pushed to the contributor fork `gordonthree/newchirp`
+  on branches `xpr6550-codeplug` and `d578uv-driver` (no PRs yet;
+  hardware validation first). Next sessions: test each driver against
+  the physical radio, then a separate write-path enablement round per
+  radio. For the XPR 6550 the realistic write path is the radio-level
+  XNL/XCMP clone protocol (phase 2, blocked on a Wireshark capture of a
+  CPS read session), not `.ctb` re-encryption: the archive's RSA
+  signature cannot be reproduced without CPS's private key.
 - The live downloads page shows separate Linux rows for DEB, RPM, AppImage,
   and Pacman. Keep Pacman labeled for Arch/Omarchy/Manjaro and keep the
   copyable `sudo pacman -U ~/Downloads/NewChirp-linux-x64-<version>.pkg.tar.zst`
